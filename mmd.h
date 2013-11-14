@@ -177,7 +177,7 @@ int mmd_read_bone_name_data(mmd_data *mmd);
  *
  * FILE *f;
  * mmd_data *mmd;
- * uint32_t i;
+ * unsigned int i;
  *
  * if (!(f = fopen("HatsuneMiku.pmd", "rb")))
  *    exit(EXIT_FAILURE);
@@ -238,7 +238,7 @@ int mmd_read_bone_name_data(mmd_data *mmd);
  * // Split into small IBOs here
  * for(i = 0; i != mmd->num_materials; ++i) {
  *    // this is texture filename
- *    // mmd->texture[i].file;
+ *    // mmd->materials[i].texture;
  *
  *    // split each material
  *    // into child object
