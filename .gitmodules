@@ -1,0 +1,3 @@
+[submodule "chck"]
+	path = chck
+	url = git://github.com/Cloudef/chck.git
