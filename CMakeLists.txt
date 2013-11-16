@@ -31,8 +31,10 @@ ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-variadic-macros -Wno-long-long")
 ENDIF ()
 
-INCLUDE_DIRECTORIES(${mmd_SOURCE_DIR}/chck/buffer)
-SET(MMD_SRC mmd.c chck/buffer/buffer.c)
+INCLUDE_DIRECTORIES(
+   ${mmd_SOURCE_DIR}/chck/buffer
+   ${mmd_SOURCE_DIR}/chck/sjis)
+SET(MMD_SRC mmd.c chck/buffer/buffer.c chck/sjis/sjis.c)
 ADD_DEFINITIONS(-fPIC)
 ADD_LIBRARY(mmd ${MMD_SRC})
 TARGET_LINK_LIBRARIES(mmd)

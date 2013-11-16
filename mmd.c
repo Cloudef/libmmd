@@ -1,5 +1,6 @@
 #include "mmd.h"
 #include "buffer.h"
+#include "sjis.h"
 #include <stdio.h>  /* for FILE* */
 #include <stdint.h> /* for standard integers */
 #include <string.h> /* for memcmp, memcpy */
@@ -19,18 +20,12 @@ enum {
  * Figure out what most of the data actually does and,
  * then refactor into saner structs */
 
-static char* mmd_strdup(const char *s) {
-    char *d = malloc(strlen(s) + 1);
-    if (d != NULL) strcpy(d,s);
-    return d;
-}
-
 /* \brief read PMD header */
 int mmd_read_header(mmd_data *mmd)
 {
    chckBuffer *buf;
    size_t header_size = 3 + sizeof(uint32_t) + 20 + 256;
-   char charbuf[257];
+   unsigned char charbuf[256];
    assert(mmd);
 
    if (!(buf = chckBufferNew(header_size, CHCK_BUFFER_ENDIAN_LITTLE)))
@@ -52,15 +47,13 @@ int mmd_read_header(mmd_data *mmd)
    if (chckBufferRead(charbuf, 1, 20, buf) != 20)
       goto fail;
 
-   charbuf[20] = 0;
-   mmd->header.name = mmd_strdup(charbuf);
+   mmd->header.name = chckSJISToUTF8(charbuf, 20, NULL, 1);
 
    /* SHIFT-JIS STRING: comment (256 bytes) */
    if (chckBufferRead(charbuf, 1, 256, buf) != 256)
       goto fail;
 
-   charbuf[256] = 0;
-   mmd->header.comment = mmd_strdup(charbuf);
+   mmd->header.comment = chckSJISToUTF8(charbuf, 256, NULL, 1);
 
    chckBufferFree(buf);
    return RETURN_OK;
@@ -205,7 +198,7 @@ int mmd_read_material_data(mmd_data *mmd)
    chckBuffer *buf;
    unsigned int i;
    size_t block_size;
-   char charbuf[21];
+   unsigned char charbuf[20];
    assert(mmd);
 
    if (!(buf = chckBufferNew(sizeof(uint32_t), CHCK_BUFFER_ENDIAN_LITTLE)))
@@ -276,8 +269,8 @@ int mmd_read_material_data(mmd_data *mmd)
       if (chckBufferRead(charbuf, 1, 20, buf) != 20)
          goto fail;
 
-      charbuf[sizeof(charbuf)-1] = 0;
-      mmd->materials[i].texture = mmd_strdup(charbuf);
+      if (!(mmd->materials[i].texture = chckSJISToUTF8(charbuf, 20, NULL, 1)))
+         goto fail;
    }
 
    chckBufferFree(buf);
@@ -293,7 +286,7 @@ int mmd_read_bone_data(mmd_data *mmd)
 {
    unsigned int i;
    size_t block_size;
-   char charbuf[51];
+   unsigned char charbuf[50];
    chckBuffer *buf;
    assert(mmd);
 
@@ -321,8 +314,7 @@ int mmd_read_bone_data(mmd_data *mmd)
       if (chckBufferRead(charbuf, 1, 50, buf) != 50)
          goto fail;
 
-      charbuf[sizeof(charbuf)-1] = 0;
-      if (!(mmd->bones[i].name = mmd_strdup(charbuf)))
+      if (!(mmd->bones[i].name = chckSJISToUTF8(charbuf, 50, NULL, 1)))
          goto fail;
 
       /* uint16_t: parent bone index */
@@ -441,7 +433,7 @@ int mmd_read_skin_data(mmd_data *mmd)
 {
    unsigned int i, i2;
    size_t block_size;
-   char charbuf[21];
+   unsigned char charbuf[20];
    chckBuffer *buf;
    assert(mmd);
 
@@ -472,7 +464,7 @@ int mmd_read_skin_data(mmd_data *mmd)
       if (chckBufferRead(charbuf, 1, 20, buf) != 20)
          goto fail;
 
-      if (!(mmd->skin[i].name = mmd_strdup(charbuf)))
+      if (!(mmd->skin[i].name = chckSJISToUTF8(charbuf, 20, NULL, 1)))
          goto fail;
 
       /* uint32_t: vertex count */
@@ -566,7 +558,7 @@ int mmd_read_bone_name_data(mmd_data *mmd)
 {
    unsigned int i;
    size_t block_size;
-   char charbuf[51];
+   unsigned char charbuf[50];
    chckBuffer *buf;
    assert(mmd);
 
@@ -597,8 +589,7 @@ int mmd_read_bone_name_data(mmd_data *mmd)
       if (chckBufferRead(charbuf, 1, 50, buf) != 50)
          goto fail;
 
-      charbuf[sizeof(charbuf)-1] = 0;
-      if (!(mmd->bone_name[i].name = mmd_strdup(charbuf)))
+      if (!(mmd->bone_name[i].name = chckSJISToUTF8(charbuf, 50, NULL, 1)))
          goto fail;
    }
 
