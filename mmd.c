@@ -31,13 +31,13 @@ int mmd_read_header(mmd_data *mmd)
    if (!(buf = chckBufferNew(header_size, CHCK_BUFFER_ENDIAN_LITTLE)))
       goto fail;
 
-   if (fread(buf->buffer, 1, header_size, mmd->f) != header_size)
+   if (chckBufferFillFromFile(mmd->f, 1, header_size, buf) != header_size)
       goto fail;
 
-   if (memcmp(buf->buffer, "Pmd", 3))
+   if (memcmp(chckBufferGetPointer(buf), "Pmd", 3))
       goto fail;
 
-   buf->curpos += 3;
+   chckBufferSeek(buf, 3, SEEK_CUR);
 
    /* FLOAT: version */
    if (!chckBufferReadUInt32(buf, (unsigned int*)&mmd->header.version))
@@ -74,7 +74,7 @@ int mmd_read_vertex_data(mmd_data *mmd)
    if (!(buf = chckBufferNew(sizeof(uint32_t), CHCK_BUFFER_ENDIAN_LITTLE)))
       goto fail;
 
-   if (fread(buf->buffer, sizeof(uint32_t), 1, mmd->f) != 1)
+   if (chckBufferFillFromFile(mmd->f, sizeof(uint32_t), 1, buf) != 1)
       goto fail;
 
    /* uint32_t: vertex count */
@@ -84,9 +84,9 @@ int mmd_read_vertex_data(mmd_data *mmd)
    /* resize our buffer to fit all the data */
    block_size = mmd->num_vertices * (sizeof(uint32_t) * 9 + 2);
    chckBufferResize(buf, block_size);
-   buf->curpos = buf->buffer;
+   chckBufferSeek(buf, 0, SEEK_SET);
 
-   if (fread(buf->buffer, 1, block_size, mmd->f) != block_size)
+   if (chckBufferFillFromFile(mmd->f, 1, block_size, buf) != block_size)
       goto fail;
 
    /* vertices */
@@ -111,21 +111,21 @@ int mmd_read_vertex_data(mmd_data *mmd)
          goto fail;
 
       if (!chckBufferIsNativeEndian(buf))
-         chckFlipEndian(&mmd->vertices[i*3], sizeof(uint32_t), 3);
+         chckBufferSwap(&mmd->vertices[i*3], sizeof(uint32_t), 3);
 
       /* 3xFLOAT: normal */
       if (chckBufferRead(&mmd->normals[i*3], sizeof(uint32_t), 3, buf) != 3)
          goto fail;
 
       if (!chckBufferIsNativeEndian(buf))
-         chckFlipEndian(&mmd->normals[i*3], sizeof(uint32_t), 3);
+         chckBufferSwap(&mmd->normals[i*3], sizeof(uint32_t), 3);
 
       /* 2xFLOAT: texture coordinate */
       if (chckBufferRead(&mmd->coords[i*2], sizeof(uint32_t), 2, buf) != 2)
          goto fail;
 
       if (!chckBufferIsNativeEndian(buf))
-         chckFlipEndian(&mmd->coords[i*2], sizeof(uint32_t), 2);
+         chckBufferSwap(&mmd->coords[i*2], sizeof(uint32_t), 2);
 
       /* uint32_t: weight vertex index */
       if (!chckBufferReadUInt32(buf, &mmd->weights[i].vertex_index))
@@ -158,7 +158,7 @@ int mmd_read_index_data(mmd_data *mmd)
    if (!(buf = chckBufferNew(sizeof(uint32_t), CHCK_BUFFER_ENDIAN_LITTLE)))
       goto fail;
 
-   if (fread(buf->buffer, sizeof(uint32_t), 1, mmd->f) != 1)
+   if (chckBufferFillFromFile(mmd->f, sizeof(uint32_t), 1, buf) != 1)
       goto fail;
 
    /* uint32_t: index count */
@@ -168,9 +168,9 @@ int mmd_read_index_data(mmd_data *mmd)
    /* resize our buffer to fit all the data */
    block_size = mmd->num_indices * sizeof(uint16_t);
    chckBufferResize(buf, block_size);
-   buf->curpos = buf->buffer;
+   chckBufferSeek(buf, 0, SEEK_SET);
 
-   if (fread(buf->buffer, 1, block_size, mmd->f) != block_size)
+   if (chckBufferFillFromFile(mmd->f, 1, block_size, buf) != block_size)
       goto fail;
 
    /* indices */
@@ -182,7 +182,7 @@ int mmd_read_index_data(mmd_data *mmd)
       goto fail;
 
    if (!chckBufferIsNativeEndian(buf))
-      chckFlipEndian(mmd->indices, sizeof(uint16_t), mmd->num_indices);
+      chckBufferSwap(mmd->indices, sizeof(uint16_t), mmd->num_indices);
 
    chckBufferFree(buf);
    return RETURN_OK;
@@ -204,7 +204,7 @@ int mmd_read_material_data(mmd_data *mmd)
    if (!(buf = chckBufferNew(sizeof(uint32_t), CHCK_BUFFER_ENDIAN_LITTLE)))
       goto fail;
 
-   if (fread(buf->buffer, sizeof(uint32_t), 1, mmd->f) != 1)
+   if (chckBufferFillFromFile(mmd->f, sizeof(uint32_t), 1, buf) != 1)
       goto fail;
 
    /* uint32_t: material count */
@@ -214,9 +214,9 @@ int mmd_read_material_data(mmd_data *mmd)
    /* resize our buffer to fit all the data */
    block_size = mmd->num_materials * (sizeof(uint32_t) * 12 + 20 + 2);
    chckBufferResize(buf, block_size);
-   buf->curpos = buf->buffer;
+   chckBufferSeek(buf, 0, SEEK_SET);
 
-   if (fread(buf->buffer, 1, block_size, mmd->f) != block_size)
+   if (chckBufferFillFromFile(mmd->f, 1, block_size, buf) != block_size)
       goto fail;
 
    /* materials */
@@ -229,7 +229,7 @@ int mmd_read_material_data(mmd_data *mmd)
          goto fail;
 
       if (!chckBufferIsNativeEndian(buf))
-         chckFlipEndian(mmd->materials[i].diffuse, sizeof(uint32_t), 3);
+         chckBufferSwap(mmd->materials[i].diffuse, sizeof(uint32_t), 3);
 
       /* FLOAT: alpha */
       if (!chckBufferReadUInt32(buf, (unsigned int*)&mmd->materials[i].alpha))
@@ -244,14 +244,14 @@ int mmd_read_material_data(mmd_data *mmd)
          goto fail;
 
       if (!chckBufferIsNativeEndian(buf))
-         chckFlipEndian(mmd->materials[i].specular, sizeof(uint32_t), 3);
+         chckBufferSwap(mmd->materials[i].specular, sizeof(uint32_t), 3);
 
       /* 3xFLOAT: ambient */
       if (chckBufferRead(mmd->materials[i].ambient, sizeof(uint32_t), 3, buf) != 3)
          goto fail;
 
       if (!chckBufferIsNativeEndian(buf))
-         chckFlipEndian(mmd->materials[i].ambient, sizeof(uint32_t), 3);
+         chckBufferSwap(mmd->materials[i].ambient, sizeof(uint32_t), 3);
 
       /* uint8_t: toon flag */
       if (!chckBufferReadUInt8(buf, &mmd->materials[i].toon))
@@ -293,7 +293,7 @@ int mmd_read_bone_data(mmd_data *mmd)
    if (!(buf = chckBufferNew(sizeof(uint16_t), CHCK_BUFFER_ENDIAN_LITTLE)))
       goto fail;
 
-   if (fread(buf->buffer, sizeof(uint16_t), 1, mmd->f) != 1)
+   if (chckBufferFillFromFile(mmd->f, sizeof(uint16_t), 1, buf) != 1)
       goto fail;
 
    /* uint16_t: bone count */
@@ -303,7 +303,7 @@ int mmd_read_bone_data(mmd_data *mmd)
    /* resize our buffer to fit all the data */
    block_size = mmd->num_bones * (50 + 1 + sizeof(uint16_t) * 3 + sizeof(uint32_t) * 3);
    chckBufferResize(buf, block_size);
-   buf->curpos = buf->buffer;
+   chckBufferSeek(buf, 0, SEEK_SET);
 
    /* allocate bones */
    if (!(mmd->bones = calloc(mmd->num_bones, sizeof(mmd_bone))))
@@ -338,7 +338,7 @@ int mmd_read_bone_data(mmd_data *mmd)
          goto fail;
 
       if (!chckBufferIsNativeEndian(buf))
-         chckFlipEndian(mmd->bones[i].head_pos, sizeof(uint32_t), 3);
+         chckBufferSwap(mmd->bones[i].head_pos, sizeof(uint32_t), 3);
    }
 
    chckBufferFree(buf);
@@ -360,7 +360,7 @@ int mmd_read_ik_data(mmd_data *mmd)
    if (!(buf = chckBufferNew(sizeof(uint16_t), CHCK_BUFFER_ENDIAN_LITTLE)))
       goto fail;
 
-   if (fread(buf->buffer, sizeof(uint16_t), 1, mmd->f) != 1)
+   if (chckBufferFillFromFile(mmd->f, sizeof(uint16_t), 1, buf) != 1)
       goto fail;
 
     /* uint16_t: IK count */
@@ -375,9 +375,9 @@ int mmd_read_ik_data(mmd_data *mmd)
       /* resize our buffer to fit all the data */
       block_size = sizeof(uint16_t) * 3 + sizeof(uint32_t) + 1;
       chckBufferResize(buf, block_size);
-      buf->curpos = buf->buffer;
+      chckBufferSeek(buf, 0, SEEK_SET);
 
-      if (fread(buf->buffer, 1, block_size, mmd->f) != block_size)
+      if (chckBufferFillFromFile(mmd->f, 1, block_size, buf) != block_size)
          goto fail;
 
       /* uint16_t: ik bone index */
@@ -407,9 +407,9 @@ int mmd_read_ik_data(mmd_data *mmd)
       /* resize our buffer to fit all the data */
       block_size = mmd->ik[i].chain_length * sizeof(uint16_t);
       chckBufferResize(buf, block_size);
-      buf->curpos = buf->buffer;
+      chckBufferSeek(buf, 0, SEEK_SET);
 
-      if (fread(buf->buffer, 1, block_size, mmd->f) != block_size)
+      if (chckBufferFillFromFile(mmd->f, 1, block_size, buf) != block_size)
          goto fail;
 
       /* uint16_t: child bone index */
@@ -417,7 +417,7 @@ int mmd_read_ik_data(mmd_data *mmd)
          goto fail;
 
       if (!chckBufferIsNativeEndian(buf))
-         chckFlipEndian(mmd->ik[i].child_bone_index, sizeof(uint16_t), mmd->ik[i].chain_length);
+         chckBufferSwap(mmd->ik[i].child_bone_index, sizeof(uint16_t), mmd->ik[i].chain_length);
    }
 
    chckBufferFree(buf);
@@ -440,7 +440,7 @@ int mmd_read_skin_data(mmd_data *mmd)
    if (!(buf = chckBufferNew(sizeof(uint16_t), CHCK_BUFFER_ENDIAN_LITTLE)))
       goto fail;
 
-   if (fread(buf->buffer, sizeof(uint16_t), 1, mmd->f) != 1)
+   if (chckBufferFillFromFile(mmd->f, sizeof(uint16_t), 1, buf) != 1)
       goto fail;
 
    /* uint16_t: skin count */
@@ -455,9 +455,9 @@ int mmd_read_skin_data(mmd_data *mmd)
       /* resize our buffer to fit all the data */
       block_size = 20 + sizeof(uint32_t) + 1;
       chckBufferResize(buf, block_size);
-      buf->curpos = buf->buffer;
+      chckBufferSeek(buf, 0, SEEK_SET);
 
-      if (fread(buf->buffer, 1, block_size, mmd->f) != block_size)
+      if (chckBufferFillFromFile(mmd->f, 1, block_size, buf) != block_size)
          goto fail;
 
       /* SJIS STRING: skin name (20 bytes) */
@@ -482,9 +482,9 @@ int mmd_read_skin_data(mmd_data *mmd)
       /* resize our buffer to fit all the data */
       block_size = mmd->skin[i].num_vertices * (sizeof(uint32_t) * 4);
       chckBufferResize(buf, block_size);
-      buf->curpos = buf->buffer;
+      chckBufferSeek(buf, 0, SEEK_SET);
 
-      if (fread(buf->buffer, 1, block_size, mmd->f) != block_size)
+      if (chckBufferFillFromFile(mmd->f, 1, block_size, buf) != block_size)
          goto fail;
 
       for(i2 = 0; i2 < mmd->skin[i].num_vertices; ++i2) {
@@ -497,7 +497,7 @@ int mmd_read_skin_data(mmd_data *mmd)
             goto fail;
 
          if (!chckBufferIsNativeEndian(buf))
-            chckFlipEndian(mmd->skin[i].vertices[i2].translation, sizeof(uint32_t), 3);
+            chckBufferSwap(mmd->skin[i].vertices[i2].translation, sizeof(uint32_t), 3);
       }
    }
 
@@ -519,7 +519,7 @@ int mmd_read_skin_display_data(mmd_data *mmd)
    if (!(buf = chckBufferNew(sizeof(uint8_t), CHCK_BUFFER_ENDIAN_LITTLE)))
       goto fail;
 
-   if (fread(buf->buffer, sizeof(uint8_t), 1, mmd->f) != 1)
+   if (chckBufferFillFromFile(mmd->f, sizeof(uint8_t), 1, buf) != 1)
       goto fail;
 
    /* uint8_t: skin display count */
@@ -533,9 +533,9 @@ int mmd_read_skin_display_data(mmd_data *mmd)
    /* resize our buffer to fit all the data */
    block_size = mmd->num_skin_displays * sizeof(uint32_t);
    chckBufferResize(buf, block_size);
-   buf->curpos = buf->buffer;
+   chckBufferSeek(buf, 0, SEEK_SET);
 
-   if (fread(buf->buffer, 1, block_size, mmd->f) != block_size)
+   if (chckBufferFillFromFile(mmd->f, 1, block_size, buf) != block_size)
       goto fail;
 
    /* uint32_t: indices */
@@ -543,7 +543,7 @@ int mmd_read_skin_display_data(mmd_data *mmd)
       goto fail;
 
    if (!chckBufferIsNativeEndian(buf))
-      chckFlipEndian(mmd->skin_display, sizeof(uint32_t), mmd->num_skin_displays);
+      chckBufferSwap(mmd->skin_display, sizeof(uint32_t), mmd->num_skin_displays);
 
    chckBufferFree(buf);
    return RETURN_OK;
@@ -565,7 +565,7 @@ int mmd_read_bone_name_data(mmd_data *mmd)
    if (!(buf = chckBufferNew(sizeof(uint8_t), CHCK_BUFFER_ENDIAN_LITTLE)))
       goto fail;
 
-   if (fread(buf->buffer, sizeof(uint8_t), 1, mmd->f) != 1)
+   if (chckBufferFillFromFile(mmd->f, sizeof(uint8_t), 1, buf) != 1)
       goto fail;
 
    /* uint8_t: bone name count */
@@ -579,9 +579,9 @@ int mmd_read_bone_name_data(mmd_data *mmd)
    /* resize our buffer to fit all the data */
    block_size = mmd->num_bone_names * 50;
    chckBufferResize(buf, block_size);
-   buf->curpos = buf->buffer;
+   chckBufferSeek(buf, 0, SEEK_SET);
 
-   if (fread(buf->buffer, 1, block_size, mmd->f) != block_size)
+   if (chckBufferFillFromFile(mmd->f, 1, block_size, buf) != block_size)
       goto fail;
 
    for(i = 0; i < mmd->num_bone_names; ++i) {
