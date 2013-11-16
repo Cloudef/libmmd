@@ -188,10 +188,9 @@ int mmd_read_bone_name_data(mmd_data *mmd);
  * if (mmd_read_header(mmd) != 0)
  *    exit(EXIT_FAILURE);
  *
- * // SJIS encoded, so probably garbage
- * // You might want to decode them to utf-8 using eg. iconv
- * puts(mmd->header.name);
- * puts(mmd->header.comment);
+ * // UTF8 encoded
+ * if (mmd->header.name) puts(mmd->header.name);
+ * if (mmd->header.comment) puts(mmd->header.comment);
  *
  * if (mmd_read_vertex_data(mmd) != 0)
  *    exit(EXIT_FAILURE);
