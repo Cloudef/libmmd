@@ -1,4 +1,4 @@
-## libmmd
+# libmmd
 
 MikuMikuDance importer
 
