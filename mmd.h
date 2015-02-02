@@ -1,5 +1,5 @@
 #ifndef __mmd_import_h__
-#define __mdd_import_h__
+#define __mmd_import_h__
 
 #ifndef FILE
 #  include <stdio.h> /* for FILE */

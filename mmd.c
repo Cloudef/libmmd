@@ -5,12 +5,7 @@
 #include <stdint.h> /* for standard integers */
 #include <string.h> /* for memcmp, memcpy */
 #include <assert.h> /* for assert */
-
-#ifdef __APPLE__
-#   include <malloc/malloc.h>
-#   else
-#   include <malloc.h>
-#endif
+#include <stdlib.h>
 
 enum {
    RETURN_OK = 0, RETURN_FAIL = -1
